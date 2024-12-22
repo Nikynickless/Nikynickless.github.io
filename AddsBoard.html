@@ -1,45 +1,40 @@
-<div id="product-actions">
-    <h3>Import Products</h3>
-    <form id="importProductForm">
-        <input type="text" id="productId" placeholder="Enter Product ID" required />
-        <button type="submit">Import</button>
-    </form>
-
-    <h3>Share Products</h3>
-    <form id="shareProductForm">
-        <input type="text" id="shareProductId" placeholder="Enter Product ID" required />
-        <select id="sharePlatform">
-            <option value="facebook">Facebook</option>
-            <option value="twitter">Twitter</option>
-            <option value="whatsapp">WhatsApp</option>
-        </select>
-        <button type="submit">Share</button>
-    </form>
+<div id="marketplace">
+    <h1>Marketplace</h1>
+    <div id="products"></div>
 </div>
 
 <script>
-    document.getElementById('importProductForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const productId = document.getElementById('productId').value;
+    // Fetch products from the API
+    fetch('/server/market_api.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const container = document.getElementById('products');
+                data.products.forEach(product => {
+                    const productDiv = document.createElement('div');
+                    productDiv.className = 'product';
+                    productDiv.innerHTML = `
+                        <img src="${product.image}" alt="${product.name}" />
+                        <h3>${product.name}</h3>
+                        <p>${product.description}</p>
+                        <p>Price: ${product.price}</p>
+                        <a href="/product.php?id=${product.id}">View Product</a>
+                        <button onclick="importProduct(${product.id})">Import</button>
+                    `;
+                    container.appendChild(productDiv);
+                });
+            } else {
+                alert('Failed to load marketplace products.');
+            }
+        });
 
+    // Function to import a product
+    function importProduct(productId) {
         fetch('/server/import_products.php', {
             method: 'POST',
             body: new URLSearchParams({ product_id: productId }),
         })
             .then(response => response.json())
             .then(data => alert(data.message || 'Product imported successfully.'));
-    });
-
-    document.getElementById('shareProductForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const productId = document.getElementById('shareProductId').value;
-        const platform = document.getElementById('sharePlatform').value;
-
-        fetch('/server/share_product.php', {
-            method: 'POST',
-            body: new URLSearchParams({ product_id: productId, platform: platform }),
-        })
-            .then(response => response.json())
-            .then(data => alert(data.message || `Shared on ${data.platform}: ${data.link}`));
-    });
+    }
 </script>
